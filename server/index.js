@@ -87,7 +87,14 @@ io.on("connection", (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 8787;
-server.listen(PORT, () => {
-  console.log(`Server running on ${PORT}`);
+const io = new Server(server, {
+  cors: {
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.length === 0) return cb(null, true);
+      cb(null, allowedOrigins.includes(origin));
+    },
+    credentials: true
+  }
 });
+
