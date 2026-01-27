@@ -23,10 +23,6 @@ app.get("/health", (_, res) => res.json({ ok: true }));
 
 const server = http.createServer(app);
 
-const io = new Server(server, {
-  cors: { origin: true, credentials: true }
-});
-
 const rooms = new Map();
 
 function getOrCreateRoom(roomId) {
