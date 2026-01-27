@@ -129,7 +129,7 @@ export default function App() {
               </label>
             </div>
 
-            <div className="row">
+            <div className="row joinRow">
               <button className="btn primary" onClick={joinRoom}>
                 Join room
               </button>

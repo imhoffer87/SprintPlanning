@@ -44,6 +44,10 @@ body {
 
 .topbar h2 { margin: 0 0 6px; }
 
+.joinRow {
+  margin-top: 18px;
+}
+
 .row {
   display: flex;
   gap: 10px;
