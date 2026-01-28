@@ -50,6 +50,14 @@ export default function App() {
   const [revealed, setRevealed] = useState(false);
   const [myVote, setMyVote] = useState(null);
 
+  // Prefill room from URL (?room=TEAM1)
+useMemo(() => {
+  const params = new URLSearchParams(window.location.search);
+  const r = params.get("room");
+  if (r && !roomId) setRoomId(r);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
+
   const votedCount = useMemo(
     () => users.filter((u) => (revealed ? u.vote != null : u.vote)).length,
     [users, revealed]
@@ -91,15 +99,13 @@ export default function App() {
     socket?.emit("reset", { roomId });
   }
 
-  if (!socket) {
-    return (
-      <div className="page">
-        <div className="wrap">
-          <div className="header">
-            <h1>Planning Poker</h1>
-            <p className="sub">Simple, real-time sprint estimation.</p>
-          </div>
+ if (!socket) {
+  const inviteUrl =
+    roomId.trim()
+      ? `${window.location.origin}/?room=${encodeURIComponent(roomId.trim())}`
+      : "";
 
+<<<<<<< HEAD
           <div className="card">
             <div className="grid2">
               <label>
@@ -110,29 +116,104 @@ export default function App() {
                   placeholder="Player1"
                 />
               </label>
+=======
+  return (
+    <div className="joinPage">
+      <div className="joinWrap">
+        <div className="joinHeader">
+          <h1>Planning Poker</h1>
+          <p className="sub">Simple, real-time sprint estimation.</p>
+        </div>
+>>>>>>> c98eca6 (Test edits)
 
-              <label>
-                <span>Room ID</span>
+        <div className="card joinCard">
+          <div className="grid2 joinGrid">
+            <label>
+              <span>Your name</span>
+              <input
+                autoFocus
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Eric"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") joinRoom();
+                }}
+              />
+            </label>
+
+            <label>
+              <span>Room ID</span>
+              <div className="roomRow">
                 <input
                   value={roomId}
                   onChange={(e) => setRoomId(e.target.value)}
+<<<<<<< HEAD
                   placeholder="TPM"
+=======
+                  placeholder="TEAM1"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") joinRoom();
+                  }}
+>>>>>>> c98eca6 (Test edits)
                 />
-              </label>
-            </div>
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={() => {
+                    const slug = Math.random().toString(36).slice(2, 7).toUpperCase();
+                    setRoomId(`ROOM-${slug}`);
+                  }}
+                  title="Generate a room ID"
+                >
+                  🎲
+                </button>
+              </div>
+            </label>
+          </div>
 
-            <div className="row joinRow">
-              <button className="btn primary" onClick={joinRoom}>
-                Join room
-              </button>
-            </div>
+          <div className="row joinActions">
+            <button className="btn primary" onClick={joinRoom}>
+              Join room
+            </button>
 
+<<<<<<< HEAD
             <p className="hint">Tip: everyone joins the same Room ID to vote together.</p>
+=======
+            <button
+              className="btn"
+              type="button"
+              disabled={!roomId.trim()}
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(inviteUrl);
+                } catch {
+                  // fallback: prompt user
+                  window.prompt("Copy this invite link:", inviteUrl);
+                }
+              }}
+              title="Copy invite link"
+            >
+              Copy invite link
+            </button>
+          </div>
+
+          <div className="joinHint">
+            <div className="hint">
+              Tip: everyone joins the same Room ID to vote together.
+            </div>
+            {roomId.trim() ? (
+              <div className="hint small">
+                Invite link: <span className="mono">{inviteUrl}</span>
+              </div>
+            ) : null}
+>>>>>>> c98eca6 (Test edits)
           </div>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
+
 
   return (
     <div className="page">
