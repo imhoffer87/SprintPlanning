@@ -23,14 +23,7 @@ body {
   margin: 0 auto;
 }
 
-.header h1 {
-  margin: 0 0 10px;
-}
-
-.header .sub {
-  margin-bottom: 24px; /* 👈 space before card */
-}
-
+.header h1 { margin: 0 0 6px; }
 .sub { margin: 0; color: var(--muted); }
 
 .card {
@@ -53,21 +46,6 @@ body {
 
 .joinRow {
   margin-top: 18px;
-}
-.card .grid2 {
-  margin-bottom: 24px; /* inputs → button */
-}
-
-.joinRow {
-  margin-bottom: 18px; /* button → tip */
-}
-
-.card .hint {
-  margin-top: 0;
-}
-
-.card {
-  margin-top: 12px;
 }
 
 .row {
