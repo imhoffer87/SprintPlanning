@@ -105,7 +105,6 @@ useMemo(() => {
       ? `${window.location.origin}/?room=${encodeURIComponent(roomId.trim())}`
       : "";
 
-<<<<<<< HEAD
           <div className="card">
             <div className="grid2">
               <label>
@@ -116,15 +115,6 @@ useMemo(() => {
                   placeholder="Player1"
                 />
               </label>
-=======
-  return (
-    <div className="joinPage">
-      <div className="joinWrap">
-        <div className="joinHeader">
-          <h1>Planning Poker</h1>
-          <p className="sub">Simple, real-time sprint estimation.</p>
-        </div>
->>>>>>> c98eca6 (Test edits)
 
         <div className="card joinCard">
           <div className="grid2 joinGrid">
@@ -147,14 +137,10 @@ useMemo(() => {
                 <input
                   value={roomId}
                   onChange={(e) => setRoomId(e.target.value)}
-<<<<<<< HEAD
-                  placeholder="TPM"
-=======
                   placeholder="TEAM1"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") joinRoom();
                   }}
->>>>>>> c98eca6 (Test edits)
                 />
                 <button
                   className="btn"
@@ -176,9 +162,6 @@ useMemo(() => {
               Join room
             </button>
 
-<<<<<<< HEAD
-            <p className="hint">Tip: everyone joins the same Room ID to vote together.</p>
-=======
             <button
               className="btn"
               type="button"
@@ -206,15 +189,12 @@ useMemo(() => {
                 Invite link: <span className="mono">{inviteUrl}</span>
               </div>
             ) : null}
->>>>>>> c98eca6 (Test edits)
           </div>
         </div>
       </div>
     </div>
   );
 }
-
-
   return (
     <div className="page">
       <div className="wrap">
