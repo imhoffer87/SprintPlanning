@@ -206,7 +206,6 @@ useMemo(() => {
               <span className="chip voted">
                 Voted: <strong>{votedCount}/{users.length}</strong>
               </span>
-
               <span className={`chip ${revealed ? "revealed" : "hidden"}`}>
                 Status: <strong>{revealed ? "Revealed" : "Hidden"}</strong>
               </span>
