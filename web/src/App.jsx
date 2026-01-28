@@ -151,15 +151,13 @@ export default function App() {
           <div>
             <h2>Room: {roomId}</h2>
             <div className="chips">
-              <span className="chip">
-                Voted: <strong>{votedCount}/{users.length}</strong>
-              </span>
-              <span className="chip">
-                Status: <strong>{revealed ? "Revealed" : "Hidden"}</strong>
-              </span>
+                <span className="chip voted">
+                  Voted: <strong>{votedCount}/{users.length}</strong>
+                </span>
+                <span className={`chip ${revealed ? "revealed" : "hidden"}`}>
+                  Status: <strong>{revealed ? "Revealed" : "Hidden"}</strong>
+                </span>
             </div>
-          </div>
-
           <div className="row">
             <button className="btn" onClick={resetVotes}>
               Reset votes
