@@ -1,3 +1,4 @@
+// web/src/App.jsx
 import { useEffect, useMemo, useState } from "react";
 import { io } from "socket.io-client";
 
@@ -19,6 +20,7 @@ function computeStats(users, revealed) {
   const sum = nums.reduce((a, b) => a + b, 0);
   const avg = sum / nums.length;
 
+  // mode (most frequent). If tie, return "tie"
   const freq = new Map();
   for (const n of nums) freq.set(n, (freq.get(n) || 0) + 1);
 
@@ -50,6 +52,8 @@ export default function App() {
   const [revealed, setRevealed] = useState(false);
   const [myVote, setMyVote] = useState(null);
 
+  const [inviteCopied, setInviteCopied] = useState(false);
+
   // Prefill room from URL (?room=TEAM1)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -76,6 +80,7 @@ export default function App() {
       setUsers(state.users || []);
       setRevealed(!!state.revealed);
 
+      // If reset happened, clear local vote highlight
       if (!state.revealed && (state.users || []).every((u) => !u.vote)) {
         setMyVote(null);
       }
@@ -97,6 +102,19 @@ export default function App() {
   function resetVotes() {
     setMyVote(null);
     socket?.emit("reset", { roomId });
+  }
+
+  function copyInvite() {
+    const url = `${window.location.origin}/?room=${encodeURIComponent(roomId)}`;
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        setInviteCopied(true);
+        setTimeout(() => setInviteCopied(false), 1500);
+      })
+      .catch(() => {
+        window.prompt("Copy this invite link:", url);
+      });
   }
 
   if (!socket) {
@@ -142,7 +160,10 @@ export default function App() {
                     className="btn"
                     type="button"
                     onClick={() => {
-                      const slug = Math.random().toString(36).slice(2, 7).toUpperCase();
+                      const slug = Math.random()
+                        .toString(36)
+                        .slice(2, 7)
+                        .toUpperCase();
                       setRoomId(`ROOM-${slug}`);
                     }}
                     title="Generate a room ID"
@@ -211,9 +232,14 @@ export default function App() {
           </div>
 
           <div className="row">
+            <button className="btn" onClick={copyInvite}>
+              {inviteCopied ? "Copied!" : "Invite"}
+            </button>
+
             <button className="btn" onClick={resetVotes}>
               Reset votes
             </button>
+
             <button className="btn primary" onClick={revealVotes}>
               Reveal
             </button>
@@ -271,13 +297,17 @@ export default function App() {
                 <div className="stat">
                   <span>Avg</span>
                   <strong>
-                    {stats?.avg == null ? "—" : Math.round(stats.avg * 100) / 100}
+                    {stats?.avg == null
+                      ? "—"
+                      : Math.round(stats.avg * 100) / 100}
                   </strong>
                 </div>
                 <div className="stat">
                   <span>Mean</span>
                   <strong>
-                    {stats?.mean == null ? "—" : Math.round(stats.mean * 100) / 100}
+                    {stats?.mean == null
+                      ? "—"
+                      : Math.round(stats.mean * 100) / 100}
                   </strong>
                 </div>
                 <div className="stat">

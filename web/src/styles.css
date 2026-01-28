@@ -1,13 +1,15 @@
+/* web/src/styles.css */
 :root {
   --bg: #0b1020;
   --card: rgba(255, 255, 255, 0.06);
   --border: rgba(255, 255, 255, 0.12);
   --text: #eef2ff;
   --muted: rgba(238, 242, 255, 0.7);
-  --accent: rgba(99, 102, 241, 0.85);
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -16,22 +18,26 @@ body {
   color: var(--text);
 }
 
-.page { padding: 22px; }
+.page {
+  padding: 22px;
+}
 
 .wrap {
   max-width: 1050px;
   margin: 0 auto;
 }
 
-.header h1 { margin: 0 0 6px; }
-.sub { margin: 0; color: var(--muted); }
+.sub {
+  margin: 0;
+  color: var(--muted);
+}
 
 .card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
 }
 
 .topbar {
@@ -42,10 +48,8 @@ body {
   margin-bottom: 14px;
 }
 
-.topbar h2 { margin: 0 0 6px; }
-
-.joinRow {
-  margin-top: 18px;
+.topbar h2 {
+  margin: 0 0 6px;
 }
 
 .row {
@@ -53,7 +57,6 @@ body {
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
-  margin-top: 16px; 
 }
 
 .grid2 {
@@ -74,13 +77,13 @@ input {
   border-radius: 12px;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  background: rgba(0,0,0,0.22);
+  background: rgba(0, 0, 0, 0.22);
   color: var(--text);
   outline: none;
 }
 
 input:focus {
-  border-color: rgba(99,102,241,0.9);
+  border-color: rgba(99, 102, 241, 0.9);
 }
 
 .btn {
@@ -88,18 +91,26 @@ input:focus {
   border-radius: 12px;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text);
 }
 
-.btn:hover { background: rgba(255,255,255,0.12); }
-
-.btn.primary {
-  border-color: rgba(99,102,241,0.6);
-  background: rgba(99,102,241,0.28);
+.btn:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 
-.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn.primary {
+  border-color: rgba(99, 102, 241, 0.6);
+  background: rgba(99, 102, 241, 0.28);
+}
+
+.chips {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Larger, colored chips */
 .chip {
   display: inline-flex;
   gap: 10px;
@@ -113,21 +124,21 @@ input:focus {
 
 /* Voted chip */
 .chip.voted {
-  background: rgba(34, 197, 94, 0.15); /* green */
+  background: rgba(34, 197, 94, 0.15);
   color: #86efac;
   border-color: rgba(34, 197, 94, 0.4);
 }
 
 /* Hidden status */
 .chip.hidden {
-  background: rgba(59, 130, 246, 0.15); /* blue */
+  background: rgba(59, 130, 246, 0.15);
   color: #93c5fd;
   border-color: rgba(59, 130, 246, 0.4);
 }
 
 /* Revealed status */
 .chip.revealed {
-  background: rgba(168, 85, 247, 0.15); /* purple */
+  background: rgba(168, 85, 247, 0.15);
   color: #d8b4fe;
   border-color: rgba(168, 85, 247, 0.4);
 }
@@ -139,9 +150,16 @@ input:focus {
 }
 
 @media (max-width: 900px) {
-  .grid2 { grid-template-columns: 1fr; }
-  .layout { grid-template-columns: 1fr; }
-  .topbar { flex-direction: column; align-items: flex-start; }
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 .deck {
@@ -156,44 +174,53 @@ input:focus {
   border-radius: 16px;
   padding: 14px 10px;
   border: 1px solid var(--border);
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--text);
   font-weight: 800;
   font-size: 16px;
 }
 
-.cardBtn:hover { background: rgba(255,255,255,0.10); }
-
-.cardBtn.selected {
-  outline: 2px solid rgba(99,102,241,0.9);
-  background: rgba(99,102,241,0.22);
+.cardBtn:hover {
+  background: rgba(255, 255, 255, 0.10);
 }
 
-.players { margin-top: 10px; display: grid; gap: 8px; }
+.cardBtn.selected {
+  outline: 2px solid rgba(99, 102, 241, 0.9);
+  background: rgba(99, 102, 241, 0.22);
+}
+
+.players {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
 
 .playerRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(0,0,0,0.18);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(0, 0, 0, 0.18);
   border-radius: 12px;
   padding: 10px 12px;
 }
 
-.playerName { font-weight: 650; }
+.playerName {
+  font-weight: 650;
+}
+
 .playerVote {
   min-width: 38px;
   text-align: center;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.14);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   padding: 6px 10px;
-  background: rgba(0,0,0,0.15);
+  background: rgba(0, 0, 0, 0.15);
 }
 
 .divider {
   height: 1px;
-  background: rgba(255,255,255,0.12);
+  background: rgba(255, 255, 255, 0.12);
   margin: 14px 0;
 }
 
@@ -205,11 +232,25 @@ input:focus {
 }
 
 .stat {
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(0,0,0,0.16);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.16);
   border-radius: 12px;
   padding: 10px 12px;
 }
+
+.stat span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 10px;
+}
+
 /* Next-level Join Screen */
 .joinPage {
   min-height: 100vh;
@@ -259,21 +300,8 @@ input:focus {
 }
 
 .mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
   opacity: 0.9;
   word-break: break-all;
-}
-
-.stat span {
-  display: block;
-  color: var(--muted);
-  font-size: 13px;
-  margin-bottom: 4px;
-}
-
-.hint {
-  color: var(--muted);
-  font-size: 13px;
-  margin-top: 10px;
 }
