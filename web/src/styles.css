@@ -23,7 +23,7 @@ body {
 }
 
 .wrap {
-  max-width: 1050px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
@@ -40,16 +40,28 @@ body {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
 }
 
+/* Topbar layout */
 .topbar {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: start;
   margin-bottom: 14px;
 }
 
-.topbar h2 {
-  margin: 0 0 6px;
+.topLeft {
+  min-width: 0;
+}
+
+.topRight {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.roomTitle {
+  margin: 0 0 10px;
 }
 
 .row {
@@ -57,6 +69,7 @@ body {
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .grid2 {
@@ -104,11 +117,15 @@ input:focus {
   background: rgba(99, 102, 241, 0.28);
 }
 
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .chips {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 10px;
 }
 
 /* Larger, colored chips */
@@ -144,71 +161,39 @@ input:focus {
   border-color: rgba(168, 85, 247, 0.4);
 }
 
-/* Role chips */
-.chip.fac {
-  background: rgba(245, 158, 11, 0.14);
-  color: #fcd34d;
-  border-color: rgba(245, 158, 11, 0.45);
-}
-
-.chip.user {
-  background: rgba(148, 163, 184, 0.12);
-  color: #cbd5e1;
-  border-color: rgba(148, 163, 184, 0.35);
-}
-
-.layout {
+/* Clean share block */
+.shareBlock {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 14px;
+  gap: 10px;
+  margin-top: 12px;
 }
 
-@media (max-width: 900px) {
-  .grid2 {
-    grid-template-columns: 1fr;
-  }
-  .layout {
-    grid-template-columns: 1fr;
-  }
-  .topbar {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
-/* Inline invite bar */
-.inviteBar {
-  display: flex;
+.shareRow {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
   gap: 10px;
   align-items: center;
-  flex-wrap: wrap;
-  margin-top: 8px;
 }
 
-.inviteLabel {
+.shareLabel {
   color: var(--muted);
   font-size: 13px;
 }
 
-.invitePill {
-  max-width: 520px;
+.sharePill {
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(0, 0, 0, 0.16);
   border-radius: 999px;
   padding: 8px 12px;
   overflow: hidden;
+  min-width: 0;
 }
 
-.inviteText {
-  display: inline-block;
+.shareText {
+  display: block;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 490px;
-}
-
-.inviteSpacer {
-  width: 12px;
 }
 
 .iconBtn {
@@ -222,6 +207,12 @@ input:focus {
 
 .iconBtn:hover {
   background: rgba(255, 255, 255, 0.12);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 14px;
 }
 
 .deck {
@@ -421,4 +412,42 @@ input:focus {
 
 .joinHint .hint {
   margin-top: 8px;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .topbar {
+    grid-template-columns: 1fr;
+  }
+  .topRight {
+    align-items: flex-start;
+  }
+  .row {
+    justify-content: flex-start;
+  }
+}
+
+/* Share rows stack nicely on small screens */
+@media (max-width: 700px) {
+  .shareRow {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      "label label"
+      "pill icon";
+  }
+  .shareLabel {
+    grid-area: label;
+  }
+  .sharePill {
+    grid-area: pill;
+  }
+  .iconBtn {
+    grid-area: icon;
+  }
 }

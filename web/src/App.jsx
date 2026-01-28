@@ -56,7 +56,7 @@ export default function App() {
   const [revealed, setRevealed] = useState(false);
   const [myVote, setMyVote] = useState(null);
 
-  // Facilitator mode (client-side). Multiple facilitators supported by sharing a fac=1 link.
+  // Facilitator mode (client-side). Multiple facilitators supported via fac=1 link.
   const [isFacilitator, setIsFacilitator] = useState(false);
 
   // Toast
@@ -87,6 +87,7 @@ export default function App() {
     const fac = params.get("fac");
     if (r) setRoomId(r);
     if (fac === "1") setIsFacilitator(true);
+
     return () => {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
@@ -293,8 +294,9 @@ export default function App() {
 
       <div className="wrap">
         <div className="topbar">
-          <div>
-            <h2>Room: {roomId}</h2>
+          {/* LEFT: title + chips + share links */}
+          <div className="topLeft">
+            <h2 className="roomTitle">Room: {roomId}</h2>
 
             <div className="chips">
               <span className="chip voted">
@@ -304,33 +306,29 @@ export default function App() {
               <span className={`chip ${revealed ? "revealed" : "hidden"}`}>
                 Status: <strong>{revealed ? "Revealed" : "Hidden"}</strong>
               </span>
-
-              <span className={`chip ${isFacilitator ? "fac" : "user"}`}>
-                Role: <strong>{isFacilitator ? "Facilitator" : "Player"}</strong>
-              </span>
             </div>
 
-            {/* Inline invite link with copy icon */}
-            <div className="inviteBar">
-              <div className="inviteLabel">Invite</div>
-              <div className="invitePill" title={inviteUrl}>
-                <span className="mono inviteText">{inviteUrl}</span>
+            <div className="shareBlock">
+              <div className="shareRow">
+                <div className="shareLabel">Invite link</div>
+                <div className="sharePill" title={inviteUrl}>
+                  <span className="mono shareText">{inviteUrl}</span>
+                </div>
+                <button
+                  className="iconBtn"
+                  onClick={() => copyText(inviteUrl, "Invite link copied")}
+                  title="Copy invite link"
+                  aria-label="Copy invite link"
+                >
+                  📋
+                </button>
               </div>
-              <button
-                className="iconBtn"
-                onClick={() => copyText(inviteUrl, "Invite link copied")}
-                title="Copy invite link"
-                aria-label="Copy invite link"
-              >
-                📋
-              </button>
 
               {isFacilitator ? (
-                <>
-                  <div className="inviteSpacer" />
-                  <div className="inviteLabel">Facilitator</div>
-                  <div className="invitePill" title={facilitatorUrl}>
-                    <span className="mono inviteText">{facilitatorUrl}</span>
+                <div className="shareRow">
+                  <div className="shareLabel">Facilitator link</div>
+                  <div className="sharePill" title={facilitatorUrl}>
+                    <span className="mono shareText">{facilitatorUrl}</span>
                   </div>
                   <button
                     className="iconBtn"
@@ -342,13 +340,13 @@ export default function App() {
                   >
                     🗝️
                   </button>
-                </>
+                </div>
               ) : null}
             </div>
           </div>
 
-          <div className="row">
-            {/* Facilitator-only controls */}
+          {/* RIGHT: actions */}
+          <div className="topRight">
             {isFacilitator ? (
               <>
                 <button
@@ -361,13 +359,14 @@ export default function App() {
                   Copy facilitator link
                 </button>
 
-                <button className="btn" onClick={resetVotes}>
-                  Reset votes
-                </button>
-
-                <button className="btn primary" onClick={revealVotes}>
-                  Reveal
-                </button>
+                <div className="row">
+                  <button className="btn" onClick={resetVotes}>
+                    Reset votes
+                  </button>
+                  <button className="btn primary" onClick={revealVotes}>
+                    Reveal
+                  </button>
+                </div>
               </>
             ) : (
               <button
