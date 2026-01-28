@@ -3,7 +3,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:8787";
-
 const DECK = ["0", "1", "2", "3", "5", "8", "13", "21", "34", "?", "☕"];
 
 function computeStats(users, revealed) {
@@ -20,6 +19,7 @@ function computeStats(users, revealed) {
   const sum = nums.reduce((a, b) => a + b, 0);
   const avg = sum / nums.length;
 
+  // mode (most frequent). If tie, return "tie"
   const freq = new Map();
   for (const n of nums) freq.set(n, (freq.get(n) || 0) + 1);
 
@@ -80,13 +80,17 @@ export default function App() {
     }
   }
 
-  // Prefill room + facilitator from URL (?room=TEAM1&fac=1)
+  // Prefill room + facilitator from URL (?room=TEAM1&fac=1) and sessionStorage
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const r = params.get("room");
     const fac = params.get("fac");
+
     if (r) setRoomId(r);
     if (fac === "1") setIsFacilitator(true);
+
+    const stored = sessionStorage.getItem("pp_isFacilitator");
+    if (stored === "1") setIsFacilitator(true);
 
     return () => {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -102,6 +106,9 @@ export default function App() {
 
   function joinRoom() {
     if (!name.trim() || !roomId.trim()) return;
+
+    // persist facilitator choice for this tab
+    sessionStorage.setItem("pp_isFacilitator", isFacilitator ? "1" : "0");
 
     const s = io(SERVER_URL, { transports: ["websocket", "polling"] });
 
@@ -148,18 +155,16 @@ export default function App() {
       ? window.location.origin
       : "";
 
-  const inviteUrl = roomId.trim()
-    ? buildInviteUrl(origin, roomId.trim(), false)
-    : "";
+  const cleanRoomId = roomId.trim();
 
-  const facilitatorUrl = roomId.trim()
-    ? buildInviteUrl(origin, roomId.trim(), true)
+  const inviteUrl = cleanRoomId ? buildInviteUrl(origin, cleanRoomId, false) : "";
+  const facilitatorUrl = cleanRoomId
+    ? buildInviteUrl(origin, cleanRoomId, true)
     : "";
 
   if (!socket) {
     return (
       <div className="joinPage">
-        {/* Toast */}
         <div
           className={`toast ${toast.open ? "open" : ""} ${toast.type}`}
           role="status"
@@ -249,7 +254,7 @@ export default function App() {
               <button
                 className="btn"
                 type="button"
-                disabled={!roomId.trim()}
+                disabled={!cleanRoomId}
                 onClick={() =>
                   copyText(
                     isFacilitator ? facilitatorUrl : inviteUrl,
@@ -266,7 +271,7 @@ export default function App() {
               <div className="hint">
                 Tip: everyone joins the same Room ID to vote together.
               </div>
-              {roomId.trim() ? (
+              {cleanRoomId ? (
                 <div className="hint small">
                   Invite link will be{" "}
                   <span className="mono">
@@ -283,7 +288,6 @@ export default function App() {
 
   return (
     <div className="page">
-      {/* Toast */}
       <div
         className={`toast ${toast.open ? "open" : ""} ${toast.type}`}
         role="status"
@@ -294,9 +298,9 @@ export default function App() {
 
       <div className="wrap">
         <div className="topbar">
-          {/* LEFT: title + chips + share links */}
+          {/* LEFT */}
           <div className="topLeft">
-            <h2 className="roomTitle">Room: {roomId}</h2>
+            <h2 className="roomTitle">Room: {cleanRoomId}</h2>
 
             <div className="chips">
               <span className="chip voted">
@@ -345,8 +349,12 @@ export default function App() {
             </div>
           </div>
 
-          {/* RIGHT: actions (no more random “copy facilitator link”) */}
+          {/* RIGHT */}
           <div className="topRight">
+            <div className="rolePill">
+              Role: <strong>{isFacilitator ? "Facilitator" : "Player"}</strong>
+            </div>
+
             {isFacilitator ? (
               <div className="actions">
                 <button className="btn btnBig" onClick={resetVotes}>
@@ -357,13 +365,24 @@ export default function App() {
                 </button>
               </div>
             ) : (
-              <button
-                className="btn btnBig"
-                onClick={() => copyText(inviteUrl, "Invite link copied")}
-                title="Copy invite link"
-              >
-                Invite
-              </button>
+              <div className="actions">
+                <button
+                  className="btn btnBig"
+                  onClick={() => copyText(inviteUrl, "Invite link copied")}
+                >
+                  Invite
+                </button>
+                <button
+                  className="btn primary btnBig"
+                  onClick={() => {
+                    copyText(facilitatorUrl, "Facilitator link copied");
+                    showToast("Open facilitator link to enable Reveal/Reset", "info");
+                  }}
+                  title="Copy facilitator link (to become a facilitator)"
+                >
+                  Become facilitator
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -419,17 +438,13 @@ export default function App() {
                 <div className="stat">
                   <span>Avg</span>
                   <strong>
-                    {stats?.avg == null
-                      ? "—"
-                      : Math.round(stats.avg * 100) / 100}
+                    {stats?.avg == null ? "—" : Math.round(stats.avg * 100) / 100}
                   </strong>
                 </div>
                 <div className="stat">
                   <span>Mean</span>
                   <strong>
-                    {stats?.mean == null
-                      ? "—"
-                      : Math.round(stats.mean * 100) / 100}
+                    {stats?.mean == null ? "—" : Math.round(stats.mean * 100) / 100}
                   </strong>
                 </div>
                 <div className="stat">
