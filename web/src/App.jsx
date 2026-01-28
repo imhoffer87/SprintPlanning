@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { io } from "socket.io-client";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:8787";
@@ -51,12 +51,11 @@ export default function App() {
   const [myVote, setMyVote] = useState(null);
 
   // Prefill room from URL (?room=TEAM1)
-useMemo(() => {
-  const params = new URLSearchParams(window.location.search);
-  const r = params.get("room");
-  if (r && !roomId) setRoomId(r);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const r = params.get("room");
+    if (r) setRoomId(r);
+  }, []);
 
   const votedCount = useMemo(
     () => users.filter((u) => (revealed ? u.vote != null : u.vote)).length,
@@ -70,7 +69,8 @@ useMemo(() => {
 
     const s = io(SERVER_URL, { transports: ["websocket", "polling"] });
 
-    s.emit("join", { roomId: roomId.trim(), name: name.trim() });
+    const rid = roomId.trim();
+    s.emit("join", { roomId: rid, name: name.trim() });
 
     s.on("state", (state) => {
       setUsers(state.users || []);
@@ -99,102 +99,99 @@ useMemo(() => {
     socket?.emit("reset", { roomId });
   }
 
- if (!socket) {
-  const inviteUrl =
-    roomId.trim()
+  if (!socket) {
+    const inviteUrl = roomId.trim()
       ? `${window.location.origin}/?room=${encodeURIComponent(roomId.trim())}`
       : "";
 
-          <div className="card">
-            <div className="grid2">
+    return (
+      <div className="joinPage">
+        <div className="joinWrap">
+          <div className="joinHeader">
+            <h1>Planning Poker</h1>
+            <p className="sub">Simple, real-time sprint estimation.</p>
+          </div>
+
+          <div className="card joinCard">
+            <div className="grid2 joinGrid">
               <label>
                 <span>Your name</span>
                 <input
+                  autoFocus
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Player1"
-                />
-              </label>
-
-        <div className="card joinCard">
-          <div className="grid2 joinGrid">
-            <label>
-              <span>Your name</span>
-              <input
-                autoFocus
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Eric"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") joinRoom();
-                }}
-              />
-            </label>
-
-            <label>
-              <span>Room ID</span>
-              <div className="roomRow">
-                <input
-                  value={roomId}
-                  onChange={(e) => setRoomId(e.target.value)}
-                  placeholder="TEAM1"
+                  placeholder="Eric"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") joinRoom();
                   }}
                 />
-                <button
-                  className="btn"
-                  type="button"
-                  onClick={() => {
-                    const slug = Math.random().toString(36).slice(2, 7).toUpperCase();
-                    setRoomId(`ROOM-${slug}`);
-                  }}
-                  title="Generate a room ID"
-                >
-                  🎲
-                </button>
-              </div>
-            </label>
-          </div>
+              </label>
 
-          <div className="row joinActions">
-            <button className="btn primary" onClick={joinRoom}>
-              Join room
-            </button>
-
-            <button
-              className="btn"
-              type="button"
-              disabled={!roomId.trim()}
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(inviteUrl);
-                } catch {
-                  // fallback: prompt user
-                  window.prompt("Copy this invite link:", inviteUrl);
-                }
-              }}
-              title="Copy invite link"
-            >
-              Copy invite link
-            </button>
-          </div>
-
-          <div className="joinHint">
-            <div className="hint">
-              Tip: everyone joins the same Room ID to vote together.
+              <label>
+                <span>Room ID</span>
+                <div className="roomRow">
+                  <input
+                    value={roomId}
+                    onChange={(e) => setRoomId(e.target.value)}
+                    placeholder="TEAM1"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") joinRoom();
+                    }}
+                  />
+                  <button
+                    className="btn"
+                    type="button"
+                    onClick={() => {
+                      const slug = Math.random().toString(36).slice(2, 7).toUpperCase();
+                      setRoomId(`ROOM-${slug}`);
+                    }}
+                    title="Generate a room ID"
+                  >
+                    🎲
+                  </button>
+                </div>
+              </label>
             </div>
-            {roomId.trim() ? (
-              <div className="hint small">
-                Invite link: <span className="mono">{inviteUrl}</span>
+
+            <div className="row joinActions">
+              <button className="btn primary" onClick={joinRoom}>
+                Join room
+              </button>
+
+              <button
+                className="btn"
+                type="button"
+                disabled={!roomId.trim()}
+                onClick={async () => {
+                  if (!inviteUrl) return;
+                  try {
+                    await navigator.clipboard.writeText(inviteUrl);
+                  } catch {
+                    window.prompt("Copy this invite link:", inviteUrl);
+                  }
+                }}
+                title="Copy invite link"
+              >
+                Copy invite link
+              </button>
+            </div>
+
+            <div className="joinHint">
+              <div className="hint">
+                Tip: everyone joins the same Room ID to vote together.
               </div>
-            ) : null}
+              {roomId.trim() ? (
+                <div className="hint small">
+                  Invite link: <span className="mono">{inviteUrl}</span>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
+
   return (
     <div className="page">
       <div className="wrap">
@@ -206,6 +203,7 @@ useMemo(() => {
               <span className="chip voted">
                 Voted: <strong>{votedCount}/{users.length}</strong>
               </span>
+
               <span className={`chip ${revealed ? "revealed" : "hidden"}`}>
                 Status: <strong>{revealed ? "Revealed" : "Hidden"}</strong>
               </span>
