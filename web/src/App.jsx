@@ -1,5 +1,5 @@
 // web/src/App.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:8787";
@@ -20,7 +20,6 @@ function computeStats(users, revealed) {
   const sum = nums.reduce((a, b) => a + b, 0);
   const avg = sum / nums.length;
 
-  // mode (most frequent). If tie, return "tie"
   const freq = new Map();
   for (const n of nums) freq.set(n, (freq.get(n) || 0) + 1);
 
@@ -43,6 +42,11 @@ function computeStats(users, revealed) {
   return { count: nums.length, sum, avg, mean: avg, mode };
 }
 
+function buildInviteUrl(origin, roomId, isFacilitator) {
+  const base = `${origin}/?room=${encodeURIComponent(roomId)}`;
+  return isFacilitator ? `${base}&fac=1` : base;
+}
+
 export default function App() {
   const [name, setName] = useState("");
   const [roomId, setRoomId] = useState("");
@@ -52,13 +56,40 @@ export default function App() {
   const [revealed, setRevealed] = useState(false);
   const [myVote, setMyVote] = useState(null);
 
-  const [inviteCopied, setInviteCopied] = useState(false);
+  // Facilitator mode (client-side). Multiple facilitators supported by sharing a fac=1 link.
+  const [isFacilitator, setIsFacilitator] = useState(false);
 
-  // Prefill room from URL (?room=TEAM1)
+  // Toast
+  const [toast, setToast] = useState({ open: false, message: "", type: "info" });
+  const toastTimerRef = useRef(null);
+
+  function showToast(message, type = "info") {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setToast({ open: true, message, type });
+    toastTimerRef.current = setTimeout(() => {
+      setToast((t) => ({ ...t, open: false }));
+    }, 1800);
+  }
+
+  async function copyText(text, successMsg = "Copied!") {
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast(successMsg, "success");
+    } catch {
+      window.prompt("Copy this:", text);
+    }
+  }
+
+  // Prefill room + facilitator from URL (?room=TEAM1&fac=1)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const r = params.get("room");
+    const fac = params.get("fac");
     if (r) setRoomId(r);
+    if (fac === "1") setIsFacilitator(true);
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
   }, []);
 
   const votedCount = useMemo(
@@ -80,10 +111,13 @@ export default function App() {
       setUsers(state.users || []);
       setRevealed(!!state.revealed);
 
-      // If reset happened, clear local vote highlight
       if (!state.revealed && (state.users || []).every((u) => !u.vote)) {
         setMyVote(null);
       }
+    });
+
+    s.on("connect_error", () => {
+      showToast("Connection error. Try refreshing.", "error");
     });
 
     setSocket(s);
@@ -96,34 +130,43 @@ export default function App() {
   }
 
   function revealVotes() {
+    if (!isFacilitator) return showToast("Facilitator only.", "error");
     socket?.emit("reveal", { roomId });
+    showToast("Revealed votes", "info");
   }
 
   function resetVotes() {
+    if (!isFacilitator) return showToast("Facilitator only.", "error");
     setMyVote(null);
     socket?.emit("reset", { roomId });
+    showToast("Votes reset", "info");
   }
 
-  function copyInvite() {
-    const url = `${window.location.origin}/?room=${encodeURIComponent(roomId)}`;
-    navigator.clipboard
-      .writeText(url)
-      .then(() => {
-        setInviteCopied(true);
-        setTimeout(() => setInviteCopied(false), 1500);
-      })
-      .catch(() => {
-        window.prompt("Copy this invite link:", url);
-      });
-  }
-
-  if (!socket) {
-    const inviteUrl = roomId.trim()
-      ? `${window.location.origin}/?room=${encodeURIComponent(roomId.trim())}`
+  const origin =
+    typeof window !== "undefined" && window.location?.origin
+      ? window.location.origin
       : "";
 
+  const inviteUrl = roomId.trim()
+    ? buildInviteUrl(origin, roomId.trim(), false)
+    : "";
+
+  const facilitatorUrl = roomId.trim()
+    ? buildInviteUrl(origin, roomId.trim(), true)
+    : "";
+
+  if (!socket) {
     return (
       <div className="joinPage">
+        {/* Toast */}
+        <div
+          className={`toast ${toast.open ? "open" : ""} ${toast.type}`}
+          role="status"
+          aria-live="polite"
+        >
+          {toast.message}
+        </div>
+
         <div className="joinWrap">
           <div className="joinHeader">
             <h1>Planning Poker</h1>
@@ -165,6 +208,7 @@ export default function App() {
                         .slice(2, 7)
                         .toUpperCase();
                       setRoomId(`ROOM-${slug}`);
+                      showToast("Generated room ID", "info");
                     }}
                     title="Generate a room ID"
                   >
@@ -172,6 +216,28 @@ export default function App() {
                   </button>
                 </div>
               </label>
+            </div>
+
+            <div className="joinToggle">
+              <label className="toggle">
+                <input
+                  type="checkbox"
+                  checked={isFacilitator}
+                  onChange={(e) => {
+                    setIsFacilitator(e.target.checked);
+                    showToast(
+                      e.target.checked
+                        ? "Facilitator mode enabled"
+                        : "Facilitator mode disabled",
+                      "info"
+                    );
+                  }}
+                />
+                <span>Join as facilitator</span>
+              </label>
+              <span className="hint small">
+                Multiple facilitators? Share the facilitator link.
+              </span>
             </div>
 
             <div className="row joinActions">
@@ -183,14 +249,12 @@ export default function App() {
                 className="btn"
                 type="button"
                 disabled={!roomId.trim()}
-                onClick={async () => {
-                  if (!inviteUrl) return;
-                  try {
-                    await navigator.clipboard.writeText(inviteUrl);
-                  } catch {
-                    window.prompt("Copy this invite link:", inviteUrl);
-                  }
-                }}
+                onClick={() =>
+                  copyText(
+                    isFacilitator ? facilitatorUrl : inviteUrl,
+                    "Invite link copied"
+                  )
+                }
                 title="Copy invite link"
               >
                 Copy invite link
@@ -203,7 +267,10 @@ export default function App() {
               </div>
               {roomId.trim() ? (
                 <div className="hint small">
-                  Invite link: <span className="mono">{inviteUrl}</span>
+                  Invite link will be{" "}
+                  <span className="mono">
+                    {isFacilitator ? facilitatorUrl : inviteUrl}
+                  </span>
                 </div>
               ) : null}
             </div>
@@ -215,6 +282,15 @@ export default function App() {
 
   return (
     <div className="page">
+      {/* Toast */}
+      <div
+        className={`toast ${toast.open ? "open" : ""} ${toast.type}`}
+        role="status"
+        aria-live="polite"
+      >
+        {toast.message}
+      </div>
+
       <div className="wrap">
         <div className="topbar">
           <div>
@@ -228,21 +304,80 @@ export default function App() {
               <span className={`chip ${revealed ? "revealed" : "hidden"}`}>
                 Status: <strong>{revealed ? "Revealed" : "Hidden"}</strong>
               </span>
+
+              <span className={`chip ${isFacilitator ? "fac" : "user"}`}>
+                Role: <strong>{isFacilitator ? "Facilitator" : "Player"}</strong>
+              </span>
+            </div>
+
+            {/* Inline invite link with copy icon */}
+            <div className="inviteBar">
+              <div className="inviteLabel">Invite</div>
+              <div className="invitePill" title={inviteUrl}>
+                <span className="mono inviteText">{inviteUrl}</span>
+              </div>
+              <button
+                className="iconBtn"
+                onClick={() => copyText(inviteUrl, "Invite link copied")}
+                title="Copy invite link"
+                aria-label="Copy invite link"
+              >
+                📋
+              </button>
+
+              {isFacilitator ? (
+                <>
+                  <div className="inviteSpacer" />
+                  <div className="inviteLabel">Facilitator</div>
+                  <div className="invitePill" title={facilitatorUrl}>
+                    <span className="mono inviteText">{facilitatorUrl}</span>
+                  </div>
+                  <button
+                    className="iconBtn"
+                    onClick={() =>
+                      copyText(facilitatorUrl, "Facilitator link copied")
+                    }
+                    title="Copy facilitator link"
+                    aria-label="Copy facilitator link"
+                  >
+                    🗝️
+                  </button>
+                </>
+              ) : null}
             </div>
           </div>
 
           <div className="row">
-            <button className="btn" onClick={copyInvite}>
-              {inviteCopied ? "Copied!" : "Invite"}
-            </button>
+            {/* Facilitator-only controls */}
+            {isFacilitator ? (
+              <>
+                <button
+                  className="btn"
+                  onClick={() =>
+                    copyText(facilitatorUrl, "Facilitator link copied")
+                  }
+                  title="Copy facilitator link (share with another facilitator)"
+                >
+                  Copy facilitator link
+                </button>
 
-            <button className="btn" onClick={resetVotes}>
-              Reset votes
-            </button>
+                <button className="btn" onClick={resetVotes}>
+                  Reset votes
+                </button>
 
-            <button className="btn primary" onClick={revealVotes}>
-              Reveal
-            </button>
+                <button className="btn primary" onClick={revealVotes}>
+                  Reveal
+                </button>
+              </>
+            ) : (
+              <button
+                className="btn"
+                onClick={() => copyText(inviteUrl, "Invite link copied")}
+                title="Copy invite link"
+              >
+                Invite
+              </button>
+            )}
           </div>
         </div>
 
