@@ -310,7 +310,7 @@ export default function App() {
 
             <div className="shareBlock">
               <div className="shareRow">
-                <div className="shareLabel">Invite link</div>
+                <div className="shareLabel">Invite</div>
                 <div className="sharePill" title={inviteUrl}>
                   <span className="mono shareText">{inviteUrl}</span>
                 </div>
@@ -326,7 +326,7 @@ export default function App() {
 
               {isFacilitator ? (
                 <div className="shareRow">
-                  <div className="shareLabel">Facilitator link</div>
+                  <div className="shareLabel">Fac</div>
                   <div className="sharePill" title={facilitatorUrl}>
                     <span className="mono shareText">{facilitatorUrl}</span>
                   </div>
@@ -345,32 +345,20 @@ export default function App() {
             </div>
           </div>
 
-          {/* RIGHT: actions */}
+          {/* RIGHT: actions (no more random “copy facilitator link”) */}
           <div className="topRight">
             {isFacilitator ? (
-              <>
-                <button
-                  className="btn"
-                  onClick={() =>
-                    copyText(facilitatorUrl, "Facilitator link copied")
-                  }
-                  title="Copy facilitator link (share with another facilitator)"
-                >
-                  Copy facilitator link
+              <div className="actions">
+                <button className="btn btnBig" onClick={resetVotes}>
+                  Reset votes
                 </button>
-
-                <div className="row">
-                  <button className="btn" onClick={resetVotes}>
-                    Reset votes
-                  </button>
-                  <button className="btn primary" onClick={revealVotes}>
-                    Reveal
-                  </button>
-                </div>
-              </>
+                <button className="btn primary btnBig" onClick={revealVotes}>
+                  Reveal
+                </button>
+              </div>
             ) : (
               <button
-                className="btn"
+                className="btn btnBig"
                 onClick={() => copyText(inviteUrl, "Invite link copied")}
                 title="Copy invite link"
               >
