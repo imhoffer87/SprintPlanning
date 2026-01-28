@@ -145,104 +145,103 @@ export default function App() {
   }
 
   return (
-    <div className="page">
-      <div className="wrap">
-        <div className="topbar">
-          <div>
-            <h2>Room: {roomId}</h2>
-            <div className="chips">
-                <span className="chip voted">
-                  Voted: <strong>{votedCount}/{users.length}</strong>
-                </span>
-                <span className={`chip ${revealed ? "revealed" : "hidden"}`}>
-                  Status: <strong>{revealed ? "Revealed" : "Hidden"}</strong>
-                </span>
-            </div>
-          <div className="row">
-            <button className="btn" onClick={resetVotes}>
-              Reset votes
-            </button>
-            <button className="btn primary" onClick={revealVotes}>
-              Reveal
-            </button>
+  <div className="page">
+    <div className="wrap">
+      <div className="topbar">
+        <div>
+          <h2>Room: {roomId}</h2>
+
+          <div className="chips">
+            <span className="chip voted">
+              Voted: <strong>{votedCount}/{users.length}</strong>
+            </span>
+
+            <span className={`chip ${revealed ? "revealed" : "hidden"}`}>
+              Status: <strong>{revealed ? "Revealed" : "Hidden"}</strong>
+            </span>
           </div>
         </div>
 
-        <div className="layout">
-          <div className="card">
-            <h3>Your vote</h3>
-            <p className="sub">Pick a card. Votes stay hidden until reveal.</p>
+        <div className="row">
+          <button className="btn" onClick={resetVotes}>
+            Reset votes
+          </button>
+          <button className="btn primary" onClick={revealVotes}>
+            Reveal
+          </button>
+        </div>
+      </div>
 
-            <div className="deck">
-              {DECK.map((v) => (
-                <button
-                  key={v}
-                  className={"cardBtn" + (myVote === v ? " selected" : "")}
-                  onClick={() => vote(v)}
-                  aria-label={`Vote ${v}`}
-                >
-                  {v}
-                </button>
-              ))}
-            </div>
+      <div className="layout">
+        <div className="card">
+          <h3>Your vote</h3>
+          <p className="sub">Pick a card. Votes stay hidden until reveal.</p>
+
+          <div className="deck">
+            {DECK.map((v) => (
+              <button
+                key={v}
+                className={"cardBtn" + (myVote === v ? " selected" : "")}
+                onClick={() => vote(v)}
+                aria-label={`Vote ${v}`}
+              >
+                {v}
+              </button>
+            ))}
           </div>
+        </div>
 
-          <div className="card">
-            <h3>Players</h3>
+        <div className="card">
+          <h3>Players</h3>
 
-            <div className="players">
-              {users.map((u) => (
-                <div key={u.id} className="playerRow">
-                  <div className="playerName">{u.name}</div>
-                  <div className="playerVote">
-                    {revealed ? (u.vote ?? "—") : u.vote ? "✓" : "…"}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="divider" />
-
-            <h3>Summary</h3>
-            {!revealed ? (
-              <p className="hint">Reveal votes to see the stats.</p>
-            ) : (
-              <div className="stats">
-                <div className="stat">
-                  <span>Numeric votes</span>
-                  <strong>{stats?.count ?? 0}</strong>
-                </div>
-                <div className="stat">
-                  <span>Sum</span>
-                  <strong>{stats?.sum ?? "—"}</strong>
-                </div>
-                <div className="stat">
-                  <span>Avg</span>
-                  <strong>
-                    {stats?.avg == null ? "—" : (Math.round(stats.avg * 100) / 100)}
-                  </strong>
-                </div>
-                <div className="stat">
-                  <span>Mean</span>
-                  <strong>
-                    {stats?.mean == null ? "—" : (Math.round(stats.mean * 100) / 100)}
-                  </strong>
-                </div>
-                <div className="stat">
-                  <span>Mode</span>
-                  <strong>{stats?.mode ?? "—"}</strong>
+          <div className="players">
+            {users.map((u) => (
+              <div key={u.id} className="playerRow">
+                <div className="playerName">{u.name}</div>
+                <div className="playerVote">
+                  {revealed ? (u.vote ?? "—") : u.vote ? "✓" : "…"}
                 </div>
               </div>
-            )}
-
-            <p className="hint">
-              Note: “?” and “☕” are ignored in the math.
-            </p>
+            ))}
           </div>
+
+          <div className="divider" />
+
+          <h3>Summary</h3>
+          {!revealed ? (
+            <p className="hint">Reveal votes to see the stats.</p>
+          ) : (
+            <div className="stats">
+              <div className="stat">
+                <span>Numeric votes</span>
+                <strong>{stats?.count ?? 0}</strong>
+              </div>
+              <div className="stat">
+                <span>Sum</span>
+                <strong>{stats?.sum ?? "—"}</strong>
+              </div>
+              <div className="stat">
+                <span>Avg</span>
+                <strong>
+                  {stats?.avg == null ? "—" : Math.round(stats.avg * 100) / 100}
+                </strong>
+              </div>
+              <div className="stat">
+                <span>Mean</span>
+                <strong>
+                  {stats?.mean == null ? "—" : Math.round(stats.mean * 100) / 100}
+                </strong>
+              </div>
+              <div className="stat">
+                <span>Mode</span>
+                <strong>{stats?.mode ?? "—"}</strong>
+              </div>
+            </div>
+          )}
+
+          <p className="hint">Note: “?” and “☕” are ignored in the math.</p>
         </div>
       </div>
     </div>
-  );
-}
-
-
+  </div>
+);
