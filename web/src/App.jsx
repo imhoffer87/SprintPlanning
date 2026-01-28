@@ -113,16 +113,20 @@ export default function App() {
     const s = io(SERVER_URL, { transports: ["websocket", "polling"] });
 
     const rid = roomId.trim();
-    s.emit("join", { roomId: rid, name: name.trim() });
+    s.emit("join", { roomId: rid, name: name.trim(), isFacilitator });
 
-    s.on("state", (state) => {
-      setUsers(state.users || []);
-      setRevealed(!!state.revealed);
+  s.on("state", (state) => {
+  setUsers(state.users || []);
+  setRevealed(!!state.revealed);
 
-      if (!state.revealed && (state.users || []).every((u) => !u.vote)) {
-        setMyVote(null);
-      }
-    });
+  // 👇 THIS LINE GOES HERE
+  setFacilitatorCount(Number(state.facilitatorCount || 0));
+
+  // If reset happened, clear local vote highlight
+  if (!state.revealed && (state.users || []).every((u) => !u.vote)) {
+    setMyVote(null);
+  }
+});
 
     s.on("connect_error", () => {
       showToast("Connection error. Try refreshing.", "error");
