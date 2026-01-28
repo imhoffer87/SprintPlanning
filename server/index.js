@@ -13,8 +13,8 @@ const allowedOrigins = (process.env.CORS_ORIGINS || "")
 
 const corsOptions = {
   origin: (origin, cb) => {
-    if (!origin) return cb(null, true); // curl/postman/no-origin
-    if (allowedOrigins.length === 0) return cb(null, true); // allow all if unset
+    if (!origin) return cb(null, true);
+    if (allowedOrigins.length === 0) return cb(null, true);
     return cb(null, allowedOrigins.includes(origin));
   },
   credentials: true,
@@ -25,12 +25,11 @@ app.get("/health", (_, res) => res.json({ ok: true }));
 
 const server = http.createServer(app);
 
-// ---- Socket.IO (IMPORTANT: create io before using it) ----
+// IMPORTANT: create io before using it
 const io = new Server(server, {
   cors: corsOptions,
 });
 
-// ---- Rooms store ----
 /**
  * rooms: Map<roomId, {
  *   story: string,
@@ -46,7 +45,7 @@ function getOrCreateRoom(roomId) {
   if (!rooms.has(roomId)) {
     rooms.set(roomId, {
       story: "New story",
-      deck: ["1", "2", "3", "5", "8", "13", "21", "?", "☕"],
+      deck: ["0", "1", "2", "3", "5", "8", "13", "21", "34", "?", "☕"],
       revealed: false,
       users: new Map(),
       facilitators: new Set(),
@@ -64,7 +63,6 @@ function roomPublicState(room) {
   }));
 
   const facilitatorCount = room.facilitators.size;
-  const controlsLocked = facilitatorCount > 0; // once any facilitator exists, controls become fac-only
 
   return {
     story: room.story,
@@ -72,7 +70,7 @@ function roomPublicState(room) {
     revealed: room.revealed,
     users,
     facilitatorCount,
-    controlsLocked,
+    controlsLocked: facilitatorCount > 0,
   };
 }
 
@@ -85,6 +83,7 @@ function emitRoomState(roomId) {
 function canControlRoom(room, socketId) {
   // If no facilitators exist, anyone can control.
   if (room.facilitators.size === 0) return true;
+
   // If facilitators exist, only facilitators can control.
   return room.facilitators.has(socketId);
 }
@@ -98,20 +97,13 @@ io.on("connection", (socket) => {
 
     const room = getOrCreateRoom(rid);
 
-    // track membership on socket for cleanup
     socket.data.roomId = rid;
-
     socket.join(rid);
 
-    // Upsert user
     room.users.set(socket.id, { name: displayName, vote: null });
 
-    // Optional facilitator
     if (isFacilitator) {
       room.facilitators.add(socket.id);
-    } else {
-      // joining as non-fac does NOT remove facilitator status
-      // (so refreshes don't accidentally revoke)
     }
 
     emitRoomState(rid);
@@ -153,7 +145,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    // Prefer the room we stored on join
     const rid = socket.data.roomId;
 
     if (rid && rooms.has(rid)) {
@@ -162,16 +153,13 @@ io.on("connection", (socket) => {
       room.users.delete(socket.id);
       room.facilitators.delete(socket.id);
 
-      // If room empty, delete it; otherwise emit updated state
-      if (room.users.size === 0) {
-        rooms.delete(rid);
-      } else {
-        emitRoomState(rid);
-      }
+      if (room.users.size === 0) rooms.delete(rid);
+      else emitRoomState(rid);
+
       return;
     }
 
-    // Fallback: scan rooms (in case disconnect happens before join finished)
+    // fallback scan
     for (const [roomId, room] of rooms.entries()) {
       if (room.users.has(socket.id) || room.facilitators.has(socket.id)) {
         room.users.delete(socket.id);

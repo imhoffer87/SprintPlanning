@@ -12,14 +12,11 @@ function computeStats(users, revealed) {
     .map((u) => Number(u.vote))
     .filter((n) => Number.isFinite(n));
 
-  if (nums.length === 0) {
-    return { count: 0, sum: 0, avg: null, mean: null, mode: null };
-  }
+  if (nums.length === 0) return { count: 0, sum: 0, avg: null, mean: null, mode: null };
 
   const sum = nums.reduce((a, b) => a + b, 0);
   const avg = sum / nums.length;
 
-  // mode (most frequent). If tie, return "tie"
   const freq = new Map();
   for (const n of nums) freq.set(n, (freq.get(n) || 0) + 1);
 
@@ -50,14 +47,17 @@ function buildInviteUrl(origin, roomId, isFacilitator) {
 export default function App() {
   const [name, setName] = useState("");
   const [roomId, setRoomId] = useState("");
-  const [socket, setSocket] = useState(null);
 
+  const [socket, setSocket] = useState(null);
   const [users, setUsers] = useState([]);
   const [revealed, setRevealed] = useState(false);
   const [myVote, setMyVote] = useState(null);
 
-  // Facilitator mode (client-side). Multiple facilitators supported via fac=1 link.
+  // Facilitator is client-side (from checkbox or &fac=1)
   const [isFacilitator, setIsFacilitator] = useState(false);
+
+  // NEW: comes from server state
+  const [facilitatorCount, setFacilitatorCount] = useState(0);
 
   // Toast
   const [toast, setToast] = useState({ open: false, message: "", type: "info" });
@@ -66,9 +66,7 @@ export default function App() {
   function showToast(message, type = "info") {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToast({ open: true, message, type });
-    toastTimerRef.current = setTimeout(() => {
-      setToast((t) => ({ ...t, open: false }));
-    }, 1800);
+    toastTimerRef.current = setTimeout(() => setToast((t) => ({ ...t, open: false })), 1800);
   }
 
   async function copyText(text, successMsg = "Copied!") {
@@ -80,7 +78,7 @@ export default function App() {
     }
   }
 
-  // Prefill room + facilitator from URL (?room=TEAM1&fac=1) and sessionStorage
+  // Prefill from URL and persist facilitator choice for this tab
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const r = params.get("room");
@@ -104,33 +102,41 @@ export default function App() {
 
   const stats = useMemo(() => computeStats(users, revealed), [users, revealed]);
 
-  function joinRoom() {
-    if (!name.trim() || !roomId.trim()) return;
+  const origin =
+    typeof window !== "undefined" && window.location?.origin ? window.location.origin : "";
 
-    // persist facilitator choice for this tab
+  const cleanRoomId = roomId.trim();
+  const inviteUrl = cleanRoomId ? buildInviteUrl(origin, cleanRoomId, false) : "";
+  const facilitatorUrl = cleanRoomId ? buildInviteUrl(origin, cleanRoomId, true) : "";
+
+  // ✅ KEY LOGIC:
+  // If there are 0 facilitators in the room, controls are open to everyone.
+  const controlsOpen = facilitatorCount === 0;
+  const canControl = isFacilitator || controlsOpen;
+
+  function joinRoom() {
+    if (!name.trim() || !cleanRoomId) return;
+
     sessionStorage.setItem("pp_isFacilitator", isFacilitator ? "1" : "0");
 
     const s = io(SERVER_URL, { transports: ["websocket", "polling"] });
 
-    const rid = roomId.trim();
-    s.emit("join", { roomId: rid, name: name.trim(), isFacilitator });
+    s.emit("join", { roomId: cleanRoomId, name: name.trim(), isFacilitator });
 
-  s.on("state", (state) => {
-  setUsers(state.users || []);
-  setRevealed(!!state.revealed);
+    s.on("state", (state) => {
+      setUsers(state.users || []);
+      setRevealed(!!state.revealed);
 
-  // 👇 THIS LINE GOES HERE
-  setFacilitatorCount(Number(state.facilitatorCount || 0));
+      // NEW: read from server
+      setFacilitatorCount(Number(state.facilitatorCount ?? 0));
 
-  // If reset happened, clear local vote highlight
-  if (!state.revealed && (state.users || []).every((u) => !u.vote)) {
-    setMyVote(null);
-  }
-});
-
-    s.on("connect_error", () => {
-      showToast("Connection error. Try refreshing.", "error");
+      // If reset happened, clear local vote highlight
+      if (!state.revealed && (state.users || []).every((u) => !u.vote)) {
+        setMyVote(null);
+      }
     });
+
+    s.on("connect_error", () => showToast("Connection error. Try refreshing.", "error"));
 
     setSocket(s);
   }
@@ -138,42 +144,27 @@ export default function App() {
   function vote(value) {
     if (!socket) return;
     setMyVote(value);
-    socket.emit("vote", { roomId, vote: value });
+    socket.emit("vote", { roomId: cleanRoomId, vote: value });
   }
 
   function revealVotes() {
-    if (!isFacilitator) return showToast("Facilitator only.", "error");
-    socket?.emit("reveal", { roomId });
+    // only block if controls are locked AND you're not facilitator
+    if (!canControl) return showToast("Controls locked (a facilitator is in this room).", "error");
+    socket?.emit("reveal", { roomId: cleanRoomId });
     showToast("Revealed votes", "info");
   }
 
   function resetVotes() {
-    if (!isFacilitator) return showToast("Facilitator only.", "error");
+    if (!canControl) return showToast("Controls locked (a facilitator is in this room).", "error");
     setMyVote(null);
-    socket?.emit("reset", { roomId });
+    socket?.emit("reset", { roomId: cleanRoomId });
     showToast("Votes reset", "info");
   }
-
-  const origin =
-    typeof window !== "undefined" && window.location?.origin
-      ? window.location.origin
-      : "";
-
-  const cleanRoomId = roomId.trim();
-
-  const inviteUrl = cleanRoomId ? buildInviteUrl(origin, cleanRoomId, false) : "";
-  const facilitatorUrl = cleanRoomId
-    ? buildInviteUrl(origin, cleanRoomId, true)
-    : "";
 
   if (!socket) {
     return (
       <div className="joinPage">
-        <div
-          className={`toast ${toast.open ? "open" : ""} ${toast.type}`}
-          role="status"
-          aria-live="polite"
-        >
+        <div className={`toast ${toast.open ? "open" : ""} ${toast.type}`} role="status" aria-live="polite">
           {toast.message}
         </div>
 
@@ -192,9 +183,7 @@ export default function App() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Eric"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") joinRoom();
-                  }}
+                  onKeyDown={(e) => e.key === "Enter" && joinRoom()}
                 />
               </label>
 
@@ -205,18 +194,13 @@ export default function App() {
                     value={roomId}
                     onChange={(e) => setRoomId(e.target.value)}
                     placeholder="TEAM1"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") joinRoom();
-                    }}
+                    onKeyDown={(e) => e.key === "Enter" && joinRoom()}
                   />
                   <button
                     className="btn"
                     type="button"
                     onClick={() => {
-                      const slug = Math.random()
-                        .toString(36)
-                        .slice(2, 7)
-                        .toUpperCase();
+                      const slug = Math.random().toString(36).slice(2, 7).toUpperCase();
                       setRoomId(`ROOM-${slug}`);
                       showToast("Generated room ID", "info");
                     }}
@@ -235,19 +219,12 @@ export default function App() {
                   checked={isFacilitator}
                   onChange={(e) => {
                     setIsFacilitator(e.target.checked);
-                    showToast(
-                      e.target.checked
-                        ? "Facilitator mode enabled"
-                        : "Facilitator mode disabled",
-                      "info"
-                    );
+                    showToast(e.target.checked ? "Facilitator mode enabled" : "Facilitator mode disabled", "info");
                   }}
                 />
-                <span>Join as facilitator</span>
+                <span>Join as facilitator (optional)</span>
               </label>
-              <span className="hint small">
-                Multiple facilitators? Share the facilitator link.
-              </span>
+              <span className="hint small">If nobody facilitates, controls are open to everyone.</span>
             </div>
 
             <div className="row joinActions">
@@ -259,28 +236,17 @@ export default function App() {
                 className="btn"
                 type="button"
                 disabled={!cleanRoomId}
-                onClick={() =>
-                  copyText(
-                    isFacilitator ? facilitatorUrl : inviteUrl,
-                    "Invite link copied"
-                  )
-                }
-                title="Copy invite link"
+                onClick={() => copyText(isFacilitator ? facilitatorUrl : inviteUrl, "Invite link copied")}
               >
                 Copy invite link
               </button>
             </div>
 
             <div className="joinHint">
-              <div className="hint">
-                Tip: everyone joins the same Room ID to vote together.
-              </div>
+              <div className="hint">Tip: everyone joins the same Room ID to vote together.</div>
               {cleanRoomId ? (
                 <div className="hint small">
-                  Invite link will be{" "}
-                  <span className="mono">
-                    {isFacilitator ? facilitatorUrl : inviteUrl}
-                  </span>
+                  Invite link: <span className="mono">{inviteUrl}</span>
                 </div>
               ) : null}
             </div>
@@ -292,17 +258,12 @@ export default function App() {
 
   return (
     <div className="page">
-      <div
-        className={`toast ${toast.open ? "open" : ""} ${toast.type}`}
-        role="status"
-        aria-live="polite"
-      >
+      <div className={`toast ${toast.open ? "open" : ""} ${toast.type}`} role="status" aria-live="polite">
         {toast.message}
       </div>
 
       <div className="wrap">
         <div className="topbar">
-          {/* LEFT */}
           <div className="topLeft">
             <h2 className="roomTitle">Room: {cleanRoomId}</h2>
 
@@ -310,7 +271,6 @@ export default function App() {
               <span className="chip voted">
                 Voted: <strong>{votedCount}/{users.length}</strong>
               </span>
-
               <span className={`chip ${revealed ? "revealed" : "hidden"}`}>
                 Status: <strong>{revealed ? "Revealed" : "Hidden"}</strong>
               </span>
@@ -322,30 +282,19 @@ export default function App() {
                 <div className="sharePill" title={inviteUrl}>
                   <span className="mono shareText">{inviteUrl}</span>
                 </div>
-                <button
-                  className="iconBtn"
-                  onClick={() => copyText(inviteUrl, "Invite link copied")}
-                  title="Copy invite link"
-                  aria-label="Copy invite link"
-                >
+                <button className="iconBtn" onClick={() => copyText(inviteUrl, "Invite link copied")} title="Copy invite link">
                   📋
                 </button>
               </div>
 
+              {/* Only show facilitator link row if you personally are a facilitator */}
               {isFacilitator ? (
                 <div className="shareRow">
                   <div className="shareLabel">Fac</div>
                   <div className="sharePill" title={facilitatorUrl}>
                     <span className="mono shareText">{facilitatorUrl}</span>
                   </div>
-                  <button
-                    className="iconBtn"
-                    onClick={() =>
-                      copyText(facilitatorUrl, "Facilitator link copied")
-                    }
-                    title="Copy facilitator link"
-                    aria-label="Copy facilitator link"
-                  >
+                  <button className="iconBtn" onClick={() => copyText(facilitatorUrl, "Facilitator link copied")} title="Copy facilitator link">
                     🗝️
                   </button>
                 </div>
@@ -353,13 +302,13 @@ export default function App() {
             </div>
           </div>
 
-          {/* RIGHT */}
           <div className="topRight">
             <div className="rolePill">
-              Role: <strong>{isFacilitator ? "Facilitator" : "Player"}</strong>
+              Controls:{" "}
+              <strong>{controlsOpen ? "Open" : isFacilitator ? "Facilitator" : "Locked"}</strong>
             </div>
 
-            {isFacilitator ? (
+            {canControl ? (
               <div className="actions">
                 <button className="btn btnBig" onClick={resetVotes}>
                   Reset votes
@@ -370,17 +319,14 @@ export default function App() {
               </div>
             ) : (
               <div className="actions">
-                <button
-                  className="btn btnBig"
-                  onClick={() => copyText(inviteUrl, "Invite link copied")}
-                >
+                <button className="btn btnBig" onClick={() => copyText(inviteUrl, "Invite link copied")}>
                   Invite
                 </button>
                 <button
                   className="btn primary btnBig"
                   onClick={() => {
                     copyText(facilitatorUrl, "Facilitator link copied");
-                    showToast("Open facilitator link to enable Reveal/Reset", "info");
+                    showToast("Open the facilitator link to enable Reveal/Reset", "info");
                   }}
                   title="Copy facilitator link (to become a facilitator)"
                 >
@@ -416,10 +362,10 @@ export default function App() {
             <div className="players">
               {users.map((u) => (
                 <div key={u.id} className="playerRow">
-                  <div className="playerName">{u.name}</div>
-                  <div className="playerVote">
-                    {revealed ? (u.vote ?? "—") : u.vote ? "✓" : "…"}
+                  <div className="playerName">
+                    {u.name} {u.isFacilitator ? "🧭" : ""}
                   </div>
+                  <div className="playerVote">{revealed ? (u.vote ?? "—") : u.vote ? "✓" : "…"}</div>
                 </div>
               ))}
             </div>
@@ -441,15 +387,11 @@ export default function App() {
                 </div>
                 <div className="stat">
                   <span>Avg</span>
-                  <strong>
-                    {stats?.avg == null ? "—" : Math.round(stats.avg * 100) / 100}
-                  </strong>
+                  <strong>{stats?.avg == null ? "—" : Math.round(stats.avg * 100) / 100}</strong>
                 </div>
                 <div className="stat">
                   <span>Mean</span>
-                  <strong>
-                    {stats?.mean == null ? "—" : Math.round(stats.mean * 100) / 100}
-                  </strong>
+                  <strong>{stats?.mean == null ? "—" : Math.round(stats.mean * 100) / 100}</strong>
                 </div>
                 <div className="stat">
                   <span>Mode</span>
