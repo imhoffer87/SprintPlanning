@@ -19,7 +19,6 @@ function computeStats(users, revealed) {
   const sum = nums.reduce((a, b) => a + b, 0);
   const avg = sum / nums.length;
 
-  // mode (most frequent). If tie, return "tie"
   const freq = new Map();
   for (const n of nums) freq.set(n, (freq.get(n) || 0) + 1);
 
@@ -39,13 +38,7 @@ function computeStats(users, revealed) {
 
   const mode = tied ? "tie" : best;
 
-  return {
-    count: nums.length,
-    sum,
-    avg,
-    mean: avg,
-    mode,
-  };
+  return { count: nums.length, sum, avg, mean: avg, mode };
 }
 
 export default function App() {
@@ -75,7 +68,6 @@ export default function App() {
       setUsers(state.users || []);
       setRevealed(!!state.revealed);
 
-      // If reset happened, clear local vote highlight
       if (!state.revealed && (state.users || []).every((u) => !u.vote)) {
         setMyVote(null);
       }
@@ -135,9 +127,7 @@ export default function App() {
               </button>
             </div>
 
-            <p className="hint">
-              Tip: everyone joins the same Room ID to vote together.
-            </p>
+            <p className="hint">Tip: everyone joins the same Room ID to vote together.</p>
           </div>
         </div>
       </div>
@@ -145,103 +135,104 @@ export default function App() {
   }
 
   return (
-  <div className="page">
-    <div className="wrap">
-      <div className="topbar">
-        <div>
-          <h2>Room: {roomId}</h2>
+    <div className="page">
+      <div className="wrap">
+        <div className="topbar">
+          <div>
+            <h2>Room: {roomId}</h2>
 
-          <div className="chips">
-            <span className="chip voted">
-              Voted: <strong>{votedCount}/{users.length}</strong>
-            </span>
+            <div className="chips">
+              <span className="chip voted">
+                Voted: <strong>{votedCount}/{users.length}</strong>
+              </span>
 
-            <span className={`chip ${revealed ? "revealed" : "hidden"}`}>
-              Status: <strong>{revealed ? "Revealed" : "Hidden"}</strong>
-            </span>
+              <span className={`chip ${revealed ? "revealed" : "hidden"}`}>
+                Status: <strong>{revealed ? "Revealed" : "Hidden"}</strong>
+              </span>
+            </div>
+          </div>
+
+          <div className="row">
+            <button className="btn" onClick={resetVotes}>
+              Reset votes
+            </button>
+            <button className="btn primary" onClick={revealVotes}>
+              Reveal
+            </button>
           </div>
         </div>
 
-        <div className="row">
-          <button className="btn" onClick={resetVotes}>
-            Reset votes
-          </button>
-          <button className="btn primary" onClick={revealVotes}>
-            Reveal
-          </button>
-        </div>
-      </div>
+        <div className="layout">
+          <div className="card">
+            <h3>Your vote</h3>
+            <p className="sub">Pick a card. Votes stay hidden until reveal.</p>
 
-      <div className="layout">
-        <div className="card">
-          <h3>Your vote</h3>
-          <p className="sub">Pick a card. Votes stay hidden until reveal.</p>
-
-          <div className="deck">
-            {DECK.map((v) => (
-              <button
-                key={v}
-                className={"cardBtn" + (myVote === v ? " selected" : "")}
-                onClick={() => vote(v)}
-                aria-label={`Vote ${v}`}
-              >
-                {v}
-              </button>
-            ))}
+            <div className="deck">
+              {DECK.map((v) => (
+                <button
+                  key={v}
+                  className={"cardBtn" + (myVote === v ? " selected" : "")}
+                  onClick={() => vote(v)}
+                  aria-label={`Vote ${v}`}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div className="card">
-          <h3>Players</h3>
+          <div className="card">
+            <h3>Players</h3>
 
-          <div className="players">
-            {users.map((u) => (
-              <div key={u.id} className="playerRow">
-                <div className="playerName">{u.name}</div>
-                <div className="playerVote">
-                  {revealed ? (u.vote ?? "—") : u.vote ? "✓" : "…"}
+            <div className="players">
+              {users.map((u) => (
+                <div key={u.id} className="playerRow">
+                  <div className="playerName">{u.name}</div>
+                  <div className="playerVote">
+                    {revealed ? (u.vote ?? "—") : u.vote ? "✓" : "…"}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="divider" />
+
+            <h3>Summary</h3>
+            {!revealed ? (
+              <p className="hint">Reveal votes to see the stats.</p>
+            ) : (
+              <div className="stats">
+                <div className="stat">
+                  <span>Numeric votes</span>
+                  <strong>{stats?.count ?? 0}</strong>
+                </div>
+                <div className="stat">
+                  <span>Sum</span>
+                  <strong>{stats?.sum ?? "—"}</strong>
+                </div>
+                <div className="stat">
+                  <span>Avg</span>
+                  <strong>
+                    {stats?.avg == null ? "—" : Math.round(stats.avg * 100) / 100}
+                  </strong>
+                </div>
+                <div className="stat">
+                  <span>Mean</span>
+                  <strong>
+                    {stats?.mean == null ? "—" : Math.round(stats.mean * 100) / 100}
+                  </strong>
+                </div>
+                <div className="stat">
+                  <span>Mode</span>
+                  <strong>{stats?.mode ?? "—"}</strong>
                 </div>
               </div>
-            ))}
+            )}
+
+            <p className="hint">Note: “?” and “☕” are ignored in the math.</p>
           </div>
-
-          <div className="divider" />
-
-          <h3>Summary</h3>
-          {!revealed ? (
-            <p className="hint">Reveal votes to see the stats.</p>
-          ) : (
-            <div className="stats">
-              <div className="stat">
-                <span>Numeric votes</span>
-                <strong>{stats?.count ?? 0}</strong>
-              </div>
-              <div className="stat">
-                <span>Sum</span>
-                <strong>{stats?.sum ?? "—"}</strong>
-              </div>
-              <div className="stat">
-                <span>Avg</span>
-                <strong>
-                  {stats?.avg == null ? "—" : Math.round(stats.avg * 100) / 100}
-                </strong>
-              </div>
-              <div className="stat">
-                <span>Mean</span>
-                <strong>
-                  {stats?.mean == null ? "—" : Math.round(stats.mean * 100) / 100}
-                </strong>
-              </div>
-              <div className="stat">
-                <span>Mode</span>
-                <strong>{stats?.mode ?? "—"}</strong>
-              </div>
-            </div>
-          )}
-
-          <p className="hint">Note: “?” and “☕” are ignored in the math.</p>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+}
