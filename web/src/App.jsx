@@ -107,7 +107,7 @@ export default function App() {
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Eric"
+                  placeholder="Player1"
                 />
               </label>
 
@@ -116,7 +116,7 @@ export default function App() {
                 <input
                   value={roomId}
                   onChange={(e) => setRoomId(e.target.value)}
-                  placeholder="TEAM1"
+                  placeholder="TPM"
                 />
               </label>
             </div>
