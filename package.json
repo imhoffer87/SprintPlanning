@@ -1,0 +1,14 @@
+{
+  "name": "planning-poker",
+  "private": true,
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "install": "npm install --workspace server && npm install --workspace web",
+    "build": "npm run build --workspace web",
+    "start": "npm start --workspace server"
+  }
+}
