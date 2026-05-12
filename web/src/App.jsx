@@ -12,7 +12,8 @@ function computeStats(users, revealed) {
     .map((u) => Number(u.vote))
     .filter((n) => Number.isFinite(n));
 
-  if (nums.length === 0) return { count: 0, sum: 0, avg: null, mean: null, mode: null };
+  if (nums.length === 0)
+    return { count: 0, sum: 0, avg: null, mean: null, mode: null };
 
   const sum = nums.reduce((a, b) => a + b, 0);
   const avg = sum / nums.length;
@@ -60,13 +61,20 @@ export default function App() {
   const [facilitatorCount, setFacilitatorCount] = useState(0);
 
   // Toast
-  const [toast, setToast] = useState({ open: false, message: "", type: "info" });
+  const [toast, setToast] = useState({
+    open: false,
+    message: "",
+    type: "info",
+  });
   const toastTimerRef = useRef(null);
 
   function showToast(message, type = "info") {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     setToast({ open: true, message, type });
-    toastTimerRef.current = setTimeout(() => setToast((t) => ({ ...t, open: false })), 1800);
+    toastTimerRef.current = setTimeout(
+      () => setToast((t) => ({ ...t, open: false })),
+      1800
+    );
   }
 
   async function copyText(text, successMsg = "Copied!") {
@@ -103,11 +111,17 @@ export default function App() {
   const stats = useMemo(() => computeStats(users, revealed), [users, revealed]);
 
   const origin =
-    typeof window !== "undefined" && window.location?.origin ? window.location.origin : "";
+    typeof window !== "undefined" && window.location?.origin
+      ? window.location.origin
+      : "";
 
   const cleanRoomId = roomId.trim();
-  const inviteUrl = cleanRoomId ? buildInviteUrl(origin, cleanRoomId, false) : "";
-  const facilitatorUrl = cleanRoomId ? buildInviteUrl(origin, cleanRoomId, true) : "";
+  const inviteUrl = cleanRoomId
+    ? buildInviteUrl(origin, cleanRoomId, false)
+    : "";
+  const facilitatorUrl = cleanRoomId
+    ? buildInviteUrl(origin, cleanRoomId, true)
+    : "";
 
   // ✅ KEY LOGIC:
   // If there are 0 facilitators in the room, controls are open to everyone.
@@ -142,7 +156,9 @@ export default function App() {
       }
     });
 
-    s.on("connect_error", () => showToast("Connection error. Try refreshing.", "error"));
+    s.on("connect_error", () =>
+      showToast("Connection error. Try refreshing.", "error")
+    );
 
     setSocket(s);
   }
@@ -155,13 +171,21 @@ export default function App() {
 
   function revealVotes() {
     // only block if controls are locked AND you're not facilitator
-    if (!canControl) return showToast("Controls locked (a facilitator is in this room).", "error");
+    if (!canControl)
+      return showToast(
+        "Controls locked (a facilitator is in this room).",
+        "error"
+      );
     socket?.emit("reveal", { roomId: cleanRoomId });
     showToast("Revealed votes", "info");
   }
 
   function resetVotes() {
-    if (!canControl) return showToast("Controls locked (a facilitator is in this room).", "error");
+    if (!canControl)
+      return showToast(
+        "Controls locked (a facilitator is in this room).",
+        "error"
+      );
     setMyVote(null);
     socket?.emit("reset", { roomId: cleanRoomId });
     showToast("Votes reset", "info");
@@ -170,7 +194,11 @@ export default function App() {
   if (!socket) {
     return (
       <div className="joinPage">
-        <div className={`toast ${toast.open ? "open" : ""} ${toast.type}`} role="status" aria-live="polite">
+        <div
+          className={`toast ${toast.open ? "open" : ""} ${toast.type}`}
+          role="status"
+          aria-live="polite"
+        >
           {toast.message}
         </div>
 
@@ -206,7 +234,10 @@ export default function App() {
                     className="btn"
                     type="button"
                     onClick={() => {
-                      const slug = Math.random().toString(36).slice(2, 7).toUpperCase();
+                      const slug = Math.random()
+                        .toString(36)
+                        .slice(2, 7)
+                        .toUpperCase();
                       setRoomId(`ROOM-${slug}`);
                       showToast("Generated room ID", "info");
                     }}
@@ -225,12 +256,19 @@ export default function App() {
                   checked={isFacilitator}
                   onChange={(e) => {
                     setIsFacilitator(e.target.checked);
-                    showToast(e.target.checked ? "Facilitator mode enabled" : "Facilitator mode disabled", "info");
+                    showToast(
+                      e.target.checked
+                        ? "Facilitator mode enabled"
+                        : "Facilitator mode disabled",
+                      "info"
+                    );
                   }}
                 />
                 <span>Join as facilitator (optional)</span>
               </label>
-              <span className="hint small">If nobody facilitates, controls are open to everyone.</span>
+              <span className="hint small">
+                If nobody facilitates, controls are open to everyone.
+              </span>
             </div>
 
             <div className="row joinActions">
@@ -242,14 +280,21 @@ export default function App() {
                 className="btn"
                 type="button"
                 disabled={!cleanRoomId}
-                onClick={() => copyText(isFacilitator ? facilitatorUrl : inviteUrl, "Invite link copied")}
+                onClick={() =>
+                  copyText(
+                    isFacilitator ? facilitatorUrl : inviteUrl,
+                    "Invite link copied"
+                  )
+                }
               >
                 Copy invite link
               </button>
             </div>
 
             <div className="joinHint">
-              <div className="hint">Tip: everyone joins the same Room ID to vote together.</div>
+              <div className="hint">
+                Tip: everyone joins the same Room ID to vote together.
+              </div>
               {cleanRoomId ? (
                 <div className="hint small">
                   Invite link: <span className="mono">{inviteUrl}</span>
@@ -264,7 +309,11 @@ export default function App() {
 
   return (
     <div className="page">
-      <div className={`toast ${toast.open ? "open" : ""} ${toast.type}`} role="status" aria-live="polite">
+      <div
+        className={`toast ${toast.open ? "open" : ""} ${toast.type}`}
+        role="status"
+        aria-live="polite"
+      >
         {toast.message}
       </div>
 
@@ -275,7 +324,10 @@ export default function App() {
 
             <div className="chips">
               <span className="chip voted">
-                Voted: <strong>{votedCount}/{users.length}</strong>
+                Voted:{" "}
+                <strong>
+                  {votedCount}/{users.length}
+                </strong>
               </span>
               <span className={`chip ${revealed ? "revealed" : "hidden"}`}>
                 Status: <strong>{revealed ? "Revealed" : "Hidden"}</strong>
@@ -288,7 +340,11 @@ export default function App() {
                 <div className="sharePill" title={inviteUrl}>
                   <span className="mono shareText">{inviteUrl}</span>
                 </div>
-                <button className="iconBtn" onClick={() => copyText(inviteUrl, "Invite link copied")} title="Copy invite link">
+                <button
+                  className="iconBtn"
+                  onClick={() => copyText(inviteUrl, "Invite link copied")}
+                  title="Copy invite link"
+                >
                   📋
                 </button>
               </div>
@@ -300,7 +356,13 @@ export default function App() {
                   <div className="sharePill" title={facilitatorUrl}>
                     <span className="mono shareText">{facilitatorUrl}</span>
                   </div>
-                  <button className="iconBtn" onClick={() => copyText(facilitatorUrl, "Facilitator link copied")} title="Copy facilitator link">
+                  <button
+                    className="iconBtn"
+                    onClick={() =>
+                      copyText(facilitatorUrl, "Facilitator link copied")
+                    }
+                    title="Copy facilitator link"
+                  >
                     🗝️
                   </button>
                 </div>
@@ -311,7 +373,13 @@ export default function App() {
           <div className="topRight">
             <div className="rolePill">
               Controls:{" "}
-              <strong>{controlsOpen ? "Open" : isFacilitator ? "Facilitator" : "Locked"}</strong>
+              <strong>
+                {controlsOpen
+                  ? "Open"
+                  : isFacilitator
+                    ? "Facilitator"
+                    : "Locked"}
+              </strong>
             </div>
 
             {canControl ? (
@@ -325,14 +393,20 @@ export default function App() {
               </div>
             ) : (
               <div className="actions">
-                <button className="btn btnBig" onClick={() => copyText(inviteUrl, "Invite link copied")}>
+                <button
+                  className="btn btnBig"
+                  onClick={() => copyText(inviteUrl, "Invite link copied")}
+                >
                   Invite
                 </button>
                 <button
                   className="btn primary btnBig"
                   onClick={() => {
                     copyText(facilitatorUrl, "Facilitator link copied");
-                    showToast("Open the facilitator link to enable Reveal/Reset", "info");
+                    showToast(
+                      "Open the facilitator link to enable Reveal/Reset",
+                      "info"
+                    );
                   }}
                   title="Copy facilitator link (to become a facilitator)"
                 >
@@ -371,7 +445,9 @@ export default function App() {
                   <div className="playerName">
                     {u.name} {u.isFacilitator ? "🧭" : ""}
                   </div>
-                  <div className="playerVote">{revealed ? (u.vote ?? "—") : u.vote ? "✓" : "…"}</div>
+                  <div className="playerVote">
+                    {revealed ? (u.vote ?? "—") : u.vote ? "✓" : "…"}
+                  </div>
                 </div>
               ))}
             </div>
@@ -393,11 +469,19 @@ export default function App() {
                 </div>
                 <div className="stat">
                   <span>Avg</span>
-                  <strong>{stats?.avg == null ? "—" : Math.round(stats.avg * 100) / 100}</strong>
+                  <strong>
+                    {stats?.avg == null
+                      ? "—"
+                      : Math.round(stats.avg * 100) / 100}
+                  </strong>
                 </div>
                 <div className="stat">
                   <span>Mean</span>
-                  <strong>{stats?.mean == null ? "—" : Math.round(stats.mean * 100) / 100}</strong>
+                  <strong>
+                    {stats?.mean == null
+                      ? "—"
+                      : Math.round(stats.mean * 100) / 100}
+                  </strong>
                 </div>
                 <div className="stat">
                   <span>Mode</span>
