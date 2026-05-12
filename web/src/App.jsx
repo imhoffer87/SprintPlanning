@@ -119,7 +119,13 @@ export default function App() {
 
     sessionStorage.setItem("pp_isFacilitator", isFacilitator ? "1" : "0");
 
-    const s = io(SERVER_URL, { transports: ["websocket", "polling"] });
+    const s = io(SERVER_URL, {
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+    });
 
     s.emit("join", { roomId: cleanRoomId, name: name.trim(), isFacilitator });
 

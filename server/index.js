@@ -28,6 +28,8 @@ const server = http.createServer(app);
 // IMPORTANT: create io before using it
 const io = new Server(server, {
   cors: corsOptions,
+  pingInterval: 10000,
+  pingTimeout: 15000,
 });
 
 /**
