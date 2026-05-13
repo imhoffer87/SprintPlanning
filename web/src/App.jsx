@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { io } from "socket.io-client";
 
 const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:8787";
-const DECK = ["0", "1", "2", "3", "5", "8", "13", "21", "34", "?", "☕"];
+const DECK = ["0", "1", "2", "3", "5", "8", "?", "☕"];
 
 function computeStats(users, revealed) {
   if (!revealed) return null;
@@ -215,11 +215,6 @@ export default function App() {
         </div>
 
         <div className="joinWrap">
-          <div className="joinHeader">
-            <h1>Planning Poker</h1>
-            <p className="sub">Simple, real-time sprint estimation.</p>
-          </div>
-
           <div className="card joinCard">
             <div className="grid2 joinGrid">
               <label>
