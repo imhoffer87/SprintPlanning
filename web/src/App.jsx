@@ -264,7 +264,14 @@ export default function App() {
 
   if (!socket) {
     return (
-      <div className="joinPage">
+      <>
+        <div className="header">
+          <div className="headerContent">
+            <h1 className="headerTitle">Sprint Estimation</h1>
+            <p className="headerSubtitle">Real-time planning poker</p>
+          </div>
+        </div>
+        <div className="joinPage">
         <div
           className={`toast ${toast.open ? "open" : ""} ${toast.type}`}
           role="status"
@@ -388,6 +395,7 @@ export default function App() {
           </div>
         </div>
       </div>
+      </>
     );
   }
 
