@@ -53,6 +53,7 @@ export default function App() {
   const [users, setUsers] = useState([]);
   const [revealed, setRevealed] = useState(false);
   const [myVote, setMyVote] = useState(null);
+  const [connectionStatus, setConnectionStatus] = useState("disconnected");
 
   // Facilitator is client-side (from checkbox or &fac=1)
   const [isFacilitator, setIsFacilitator] = useState(false);
@@ -146,19 +147,18 @@ export default function App() {
     s.on("state", (state) => {
       setUsers(state.users || []);
       setRevealed(!!state.revealed);
-
-      // NEW: read from server
       setFacilitatorCount(Number(state.facilitatorCount ?? 0));
-
-      // If reset happened, clear local vote highlight
       if (!state.revealed && (state.users || []).every((u) => !u.vote)) {
         setMyVote(null);
       }
     });
 
-    s.on("connect_error", () =>
-      showToast("Connection error. Try refreshing.", "error")
-    );
+    s.on("connect", () => setConnectionStatus("connected"));
+    s.on("disconnect", () => setConnectionStatus("disconnected"));
+    s.on("connect_error", () => {
+      setConnectionStatus("error");
+      showToast("Connection error. Reconnecting...", "error");
+    });
 
     setSocket(s);
   }
@@ -371,6 +371,15 @@ export default function App() {
           </div>
 
           <div className="topRight">
+            <div className={`connectionStatus ${connectionStatus}`}>
+              <span className="statusDot" />
+              {connectionStatus === "connected"
+                ? "Connected"
+                : connectionStatus === "error"
+                  ? "Reconnecting..."
+                  : "Disconnected"}
+            </div>
+
             <div className="rolePill">
               Controls:{" "}
               <strong>
