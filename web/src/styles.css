@@ -385,6 +385,12 @@ input:focus {
   padding: 10px 12px;
 }
 
+.stat.stat--highlighted {
+  background: var(--primary-light);
+  border: 2px solid var(--primary);
+  box-shadow: 0 4px 12px rgba(92, 184, 92, 0.2);
+}
+
 .stat span {
   display: block;
   color: var(--muted);
@@ -563,6 +569,25 @@ input:focus {
   margin-top: 8px;
 }
 
+/* Recent rooms section */
+.recentRooms {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.roomButtonGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.roomButtonGroup .btn {
+  font-size: 13px;
+  padding: 8px 10px;
+}
+
 /* Mobile friendliness */
 @media (max-width: 900px) {
   .grid2 {
@@ -605,5 +630,51 @@ input:focus {
   }
   .iconBtn {
     grid-area: icon;
+  }
+}
+
+/* Enhanced mobile responsiveness */
+@media (max-width: 640px) {
+  .page {
+    padding: 16px;
+  }
+  .card {
+    padding: 12px;
+  }
+  .deck {
+    grid-template-columns: repeat(auto-fit, minmax(55px, 1fr));
+    gap: 8px;
+  }
+  .btnBig {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+  .topbar {
+    gap: 12px;
+  }
+  .topRight {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding: 12px;
+  }
+  .card {
+    padding: 10px;
+  }
+  .topLeft {
+    margin-bottom: 8px;
+  }
+  .shareLabel {
+    font-size: 12px;
+  }
+  .roomTitle {
+    font-size: 18px;
+  }
+  .btnBig {
+    padding: 10px 12px;
+    font-size: 13px;
   }
 }

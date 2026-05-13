@@ -49,6 +49,15 @@ export default function App() {
   const [name, setName] = useState("");
   const [roomId, setRoomId] = useState("");
 
+  const [roomHistory, setRoomHistory] = useState(() => {
+    try {
+      const stored = localStorage.getItem("pp_roomHistory");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
   const [socket, setSocket] = useState(null);
   const [users, setUsers] = useState([]);
   const [revealed, setRevealed] = useState(false);
@@ -75,6 +84,7 @@ export default function App() {
     type: "info",
   });
   const toastTimerRef = useRef(null);
+  const votedNotifRef = useRef(false);
 
   function showToast(message, type = "info") {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -116,6 +126,10 @@ export default function App() {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
+  useEffect(() => {
+    localStorage.setItem("pp_roomHistory", JSON.stringify(roomHistory.slice(0, 5)));
+  }, [roomHistory]);
+
   const votedCount = useMemo(
     () => users.filter((u) => (revealed ? u.vote != null : u.vote)).length,
     [users, revealed]
@@ -141,10 +155,28 @@ export default function App() {
   const controlsOpen = facilitatorCount === 0;
   const canControl = isFacilitator || controlsOpen;
 
+  useEffect(() => {
+    if (!revealed && votedCount > 0 && votedCount === users.length && users.length > 1) {
+      if (!votedNotifRef.current) {
+        showToast("Everyone has voted! Ready to reveal.", "success");
+        votedNotifRef.current = true;
+      }
+    }
+  }, [votedCount, users.length, revealed]);
+
+  useEffect(() => {
+    votedNotifRef.current = false;
+  }, [revealed]);
+
   function joinRoom() {
     if (!name.trim() || !cleanRoomId) return;
 
     sessionStorage.setItem("pp_isFacilitator", isFacilitator ? "1" : "0");
+
+    setRoomHistory((prev) => {
+      const filtered = prev.filter((r) => r !== cleanRoomId);
+      return [cleanRoomId, ...filtered].slice(0, 5);
+    });
 
     const s = io(SERVER_URL, {
       transports: ["websocket", "polling"],
@@ -180,6 +212,33 @@ export default function App() {
     setMyVote(value);
     socket.emit("vote", { roomId: cleanRoomId, vote: value });
   }
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleKeyPress = (e) => {
+      const keyMap = {
+        "0": DECK[0],
+        "1": DECK[1],
+        "2": DECK[2],
+        "3": DECK[3],
+        "5": DECK[4],
+        "8": DECK[5],
+        "?": DECK[6],
+        c: DECK[7],
+      };
+
+      const key = e.key?.toLowerCase();
+      if (keyMap[key]) {
+        e.preventDefault();
+        vote(keyMap[key]);
+        showToast(`Voted: ${keyMap[key]}`, "success");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [socket]);
 
   function revealVotes() {
     // only block if controls are locked AND you're not facilitator
@@ -308,6 +367,24 @@ export default function App() {
                 </div>
               ) : null}
             </div>
+
+            {roomHistory.length > 0 && (
+              <div className="recentRooms">
+                <div className="hint">Recent rooms:</div>
+                <div className="roomButtonGroup">
+                  {roomHistory.map((rid) => (
+                    <button
+                      key={rid}
+                      className="btn"
+                      type="button"
+                      onClick={() => setRoomId(rid)}
+                    >
+                      {rid}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -507,7 +584,13 @@ export default function App() {
                       : Math.round(stats.mean * 100) / 100}
                   </strong>
                 </div>
-                <div className="stat">
+                <div
+                  className={`stat ${
+                    revealed && stats?.mode && stats.mode !== "tie"
+                      ? "stat--highlighted"
+                      : ""
+                  }`}
+                >
                   <span>Mode</span>
                   <strong>{stats?.mode ?? "—"}</strong>
                 </div>
