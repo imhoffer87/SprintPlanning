@@ -55,6 +55,13 @@ export default function App() {
   const [myVote, setMyVote] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState("disconnected");
 
+  const [theme, setTheme] = useState(() => {
+    const stored = localStorage.getItem("pp_theme");
+    if (stored) return stored;
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    return prefersDark ? "dark" : "light";
+  });
+
   // Facilitator is client-side (from checkbox or &fac=1)
   const [isFacilitator, setIsFacilitator] = useState(false);
 
@@ -103,6 +110,11 @@ export default function App() {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem("pp_theme", theme);
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   const votedCount = useMemo(
     () => users.filter((u) => (revealed ? u.vote != null : u.vote)).length,
@@ -371,6 +383,14 @@ export default function App() {
           </div>
 
           <div className="topRight">
+            <button
+              className="themeToggle"
+              onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+              title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+            >
+              {theme === "light" ? "🌙" : "☀️"}
+            </button>
+
             <div className={`connectionStatus ${connectionStatus}`}>
               <span className="statusDot" />
               {connectionStatus === "connected"
